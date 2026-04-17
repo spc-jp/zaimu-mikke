@@ -181,6 +181,39 @@ body{font-family:'Hiragino Sans','Meiryo',sans-serif;background:#f0f4ff;color:#1
   font-weight:bold;opacity:0;pointer-events:none;z-index:9999;
   transition:opacity .3s,transform .3s;white-space:nowrap;box-shadow:0 4px 16px rgba(0,0,0,.2);}
 
+/* ── AIコメント ブロック表示 ── */
+.ai-block { margin-bottom: 14px; }
+.ai-block-title {
+  font-size: .82rem; font-weight: bold; color: #225AD3;
+  background: #eef3ff; border-radius: 8px 8px 0 0;
+  padding: 7px 12px; border-left: 4px solid #225AD3;
+}
+.ai-block-body {
+  font-size: .88rem; line-height: 1.85; color: #1a1a2e;
+  padding: 12px 14px; background: #f8faff;
+  border-radius: 0 0 8px 8px;
+  border: 1px solid #e0e8ff; border-top: none;
+}
+.ai-block.risk .ai-block-title {
+  color: #e65100; background: #fff3e0; border-color: #ff9800;
+}
+.ai-block.risk .ai-block-body { background: #fffbf5; border-color: #ffe0b2; }
+.ai-block.qa .ai-block-title {
+  color: #1b5e20; background: #e8f5e9; border-color: #4caf50;
+}
+.ai-block.qa .ai-block-body { background: #f5fbf5; border-color: #c8e6c9; }
+.ai-block.qa .ai-block-body p { margin-bottom: 8px; }
+.bep-row {
+  display: flex; gap: 8px; margin-bottom: 14px; flex-wrap: wrap;
+}
+.bep-box {
+  flex: 1; min-width: 120px; background: #f0f4ff;
+  border-radius: 10px; padding: 10px 12px; text-align: center;
+}
+.bep-label { font-size: .72rem; color: #888; margin-bottom: 4px; }
+.bep-value { font-size: 1.05rem; font-weight: bold; color: #225AD3; }
+.bep-sub   { font-size: .72rem; color: #aaa; margin-top: 2px; }
+
 /* ── フッター ── */
 .footer{text-align:center;padding:24px 16px;font-size:.75rem;color:#aaa;line-height:1.8;}
 .footer a{color:#0179E8;text-decoration:none;}
@@ -749,11 +782,48 @@ function runDiagnosis(){
   .then(function(json){
     document.getElementById('aiLoading').style.display='none';
     var txt=document.getElementById('aiCommentText');
-    txt.textContent=json.comment||'コメントを生成できませんでした。';
+    var raw=json.comment||'コメントを生成できませんでした。';
+    var meta=json.meta||{};
+
+    // BEPシナリオボックス
+    var bepHtml='';
+    if(meta.bepSales){
+      var p10color=meta.profitDown10>=0?'#2e7d32':'#c62828';
+      bepHtml='<div class="bep-row">'+
+        '<div class="bep-box"><div class="bep-label">損益分岐点売上</div>'+
+        '<div class="bep-value">'+meta.bepSales.toLocaleString()+'万円</div>'+
+        '<div class="bep-sub">余裕率 '+meta.bepMargin+'%</div></div>'+
+        '<div class="bep-box"><div class="bep-label">売上10%減の利益</div>'+
+        '<div class="bep-value" style="color:'+p10color+'">'+meta.profitDown10.toLocaleString()+'万円</div>'+
+        '<div class="bep-sub">'+(meta.profitDown10>=0?'まだ黒字':'赤字転落')+'</div></div>'+
+        '<div class="bep-box"><div class="bep-label">現金残存</div>'+
+        '<div class="bep-value">'+meta.cashRunway+'ヶ月</div>'+
+        '<div class="bep-sub">現在の水準で</div></div>'+
+        '</div>';
+    }
+
+    // ▍で分割してブロック表示
+    var blocks=raw.split(/▍/).filter(function(b){return b.trim();});
+    var html='<span class="status-badge '+status[1]+'">'+status[0]+'</span><br><br>'+bepHtml;
+    blocks.forEach(function(block,i){
+      var lines=block.trim().split('
+');
+      var title=lines[0].trim();
+      var body=lines.slice(1).join('
+').trim();
+      var cls='ai-block';
+      if(title.indexOf('リスク')>-1||title.indexOf('急所')>-1)cls+=' risk';
+      if(title.indexOf('質問')>-1||title.indexOf('面談')>-1)cls+=' qa';
+      // 箇条書き番号を改行で整形
+      body=body.replace(/([1-9][\.\．])/g,'<br>$1');
+      html+='<div class="'+cls+'">'+
+        '<div class="ai-block-title">'+title+'</div>'+
+        '<div class="ai-block-body">'+body.replace(/
+/g,'<br>')+'</div>'+
+        '</div>';
+    });
+    txt.innerHTML=html;
     txt.style.display='block';
-    // ステータスをaiコメントの前に挿入
-    var statusHtml='<span class="status-badge '+status[1]+'">'+status[0]+'</span><br><br>';
-    txt.innerHTML=statusHtml+txt.textContent;
   })
   .catch(function(){
     document.getElementById('aiLoading').style.display='none';
