@@ -15,9 +15,11 @@ body{font-family:'Hiragino Sans','Meiryo',sans-serif;background:#f0f4ff;color:#1
 .header-center h1{font-size:1.5rem;letter-spacing:.02em;}
 .header-center p{font-size:.82rem;opacity:.9;margin-top:3px;}
 .hdr-right{display:flex;gap:7px;}
-.hdr-btn{background:rgba(255,255,255,.18);border:1.5px solid rgba(255,255,255,.45);color:white;
-  border-radius:10px;padding:7px 12px;font-size:.8rem;cursor:pointer;display:flex;align-items:center;gap:4px;}
-.hdr-btn:hover{background:rgba(255,255,255,.28);}
+.hdr-btn{background:rgba(255,255,255,.22);border:1.5px solid rgba(255,255,255,.55);color:white;
+  border-radius:10px;padding:9px 14px;font-size:.82rem;font-weight:bold;
+  cursor:pointer;display:flex;align-items:center;gap:5px;
+  -webkit-tap-highlight-color:transparent;}
+.hdr-btn:hover,.hdr-btn:active{background:rgba(255,255,255,.38);}
 
 /* ── バナー ── */
 .free-badge{text-align:center;border-radius:10px;padding:11px 16px;margin:14px 0;
@@ -142,8 +144,12 @@ body{font-family:'Hiragino Sans','Meiryo',sans-serif;background:#f0f4ff;color:#1
 .pw-error{color:#c62828;font-size:.8rem;margin-top:6px;display:none;}
 
 /* ── パネル ── */
-.how-panel,.setting-panel{display:none;position:fixed;inset:0;z-index:900;
-  background:rgba(0,0,0,.45);align-items:flex-start;justify-content:center;
+.how-panel,.setting-panel{
+  display:none;position:fixed;
+  top:0;left:0;right:0;bottom:0;
+  z-index:9000;
+  background:rgba(0,0,0,.5);
+  align-items:flex-start;justify-content:center;
   padding:20px 12px;overflow-y:auto;}
 .how-panel.open,.setting-panel.open{display:flex;}
 .how-box,.setting-box{background:white;border-radius:20px;padding:24px 20px 20px;
@@ -470,8 +476,24 @@ var currentMode = 'owner';
 var radarChartInstance = null;
 
 /* ── パネル ─────────────────────────────── */
-function openPanel(id){var e=document.getElementById(id);if(e){e.classList.add('open');document.body.style.overflow='hidden';}}
-function closePanel(id){var e=document.getElementById(id);if(e){e.classList.remove('open');document.body.style.overflow='';}}
+function openPanel(id){
+  var e=document.getElementById(id);
+  if(!e)return;
+  e.classList.add('open');
+  e.style.display='flex';
+  document.body.style.overflow='hidden';
+  document.body.style.position='fixed';
+  document.body.style.width='100%';
+}
+function closePanel(id){
+  var e=document.getElementById(id);
+  if(!e)return;
+  e.classList.remove('open');
+  e.style.display='none';
+  document.body.style.overflow='';
+  document.body.style.position='';
+  document.body.style.width='';
+}
 function closeOnBg(e,id){if(e.target===document.getElementById(id))closePanel(id);}
 
 /* ── テーマ ──────────────────────────────── */
@@ -806,11 +828,9 @@ function runDiagnosis(){
     var blocks=raw.split(/▍/).filter(function(b){return b.trim();});
     var html='<span class="status-badge '+status[1]+'">'+status[0]+'</span><br><br>'+bepHtml;
     blocks.forEach(function(block,i){
-      var lines=block.trim().split('
-');
+      var lines=block.trim().split('\n');
       var title=lines[0].trim();
-      var body=lines.slice(1).join('
-').trim();
+      var body=lines.slice(1).join('\n').trim();
       var cls='ai-block';
       if(title.indexOf('リスク')>-1||title.indexOf('急所')>-1)cls+=' risk';
       if(title.indexOf('質問')>-1||title.indexOf('面談')>-1)cls+=' qa';
@@ -818,8 +838,7 @@ function runDiagnosis(){
       body=body.replace(/([1-9][\.\．])/g,'<br>$1');
       html+='<div class="'+cls+'">'+
         '<div class="ai-block-title">'+title+'</div>'+
-        '<div class="ai-block-body">'+body.replace(/
-/g,'<br>')+'</div>'+
+        '<div class="ai-block-body">'+body.replace(/\n/g,'<br>')+'</div>'+
         '</div>';
     });
     txt.innerHTML=html;
